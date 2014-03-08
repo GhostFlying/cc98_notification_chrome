@@ -1,4 +1,4 @@
-var cookieCache = {
+/*var cookieCache = {
 
   cookieStore: {},
 
@@ -42,4 +42,4 @@ var cookieProcess = {
 document.addEventListener('DOMContentLoaded', function () {
   console.log("loaded");
   cookieProcess.getCookie();
-});
+});*/
