@@ -12,23 +12,48 @@ function init(){
 	chrome.alarms.create('refresh', {periodInMinutes: 0.1});
 }
 
+
 function onAlarm(alarm) {
 	console.log ('Got alarm', alarm);
+	chrome.cookies.get({url:"http://www.cc98.org", name:"cc98Simple"}, function (cookie){
+		checkIsSimple(cookie);
+	});
+}
+
+function checkIsSimple(cookie) {
+	console.log(cookie);
+	if (cookie.value == '0'){
+		console.log('Full version.');
+
+		cookieNew = {
+			url: "http://www.cc98.org",
+			name: cookie.name,
+			value: "1"
+		}
+		chrome.cookies.set(cookieNew);
+		console.log('Changed to Simple.');
+		getUnreedNum();
+		cookieNew.value = '0';
+		chrome.cookies.set(cookieNew);
+		console.log('Changed to Full.');
+	}
+	else {
+		console.log('Simple version.')
+		getUnreedNum();
+	}
+
+}
+
+function getUnreedNum(){
 	htmlobj=$.ajax({url:MESSAGE_LIST_URL,async:false});
 	pmListHtml = htmlobj.responseText;
-	//console.log(pmListHtml);
 	indexOfUnreed = pmListHtml.indexOf('条未读消息');
 	console.log (indexOfUnreed);
 	if (indexOfUnreed > 0 ) {
 		unreedNum = parseInt(pmListHtml.substr(indexOfUnreed - 1, 1));
 		console.log('Notify some unreed messages. Number: ' + unreedNum);
 		onUnreedDetected(unreedNum, pmListHtml);
-	}	
-	//var index = htmlobj.indexOf('未读消息')
-/*	if ( index > 0 ) {
-		console.log (index); 
-	}*/
-	//console.log (htmlobj.responseText);
+	}
 }
 
 function onUnreedDetected (unreedNum, pmListHtml){
