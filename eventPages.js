@@ -21,7 +21,7 @@ function onAlarm(alarm) {
 }
 
 function checkIsSimple(cookie) {
-	console.log(cookie);
+	//console.log(cookie);
 	if (cookie.value == '0'){
 		console.log('Full version.');
 
@@ -60,10 +60,25 @@ function onUnreedDetected (unreedNum, pmListHtml){
 	console.log ('onUnreedDetected start.');
 	messageIdList = pmListHtml.match(/name=id value=\d+/g);
 	console.log (messageIdList);
+	messageTitles = pmListHtml.match(/\n\s{4}>.+(?=<\/a><\/td>)/g);
+	messageSenders = pmListHtml.match(/target=_blank>.+(?=<\/a>)/g);
+	//console.log(messageSenders);
 	for (i = 0; i < unreedNum; i++){
-		processUnreedId = parseInt(messageIdList[i].substr(14));
-		console.log(processUnreedId);
-		messageContentHtml = $.ajax({url:MESSAGE_CONTENT_URL + processUnreedId,async:false}).responseText;
+		messageTitle = messageTitles[i].substr(5);
+		messageSender = messageSenders[i*2].substr(14);
+		//console.log (messageSender);
+		opt = {
+			type:"basic",
+			title: '收到一条来自  ' + messageSender + '  的新消息',
+			message: '标题：' +  messageTitle + '\n     点击查看详细内容',
+			iconUrl: "http://www.cc98.org/favicon.ico"
+		}
+		console.log ('start notification' + messageIdList[i].substr(14));
+		chrome.notifications.create('message' + messageIdList[i].substr(14), opt, function(){});
+		chrome.notifications.onClicked.addListener(onNotificationClicked);
+		/*processUnreedId = parseInt(messageIdList[i].substr(14));
+		console.log(processUnreedId);*/
+/*		messageContentHtml = $.ajax({url:MESSAGE_CONTENT_URL + processUnreedId,async:false}).responseText;
 		messageTitle = messageContentHtml.match(/消息标题：.+(?=<\/b>)/g)[0].substr(5);
 		messageContent = messageContentHtml.match(/<span id="ubbcode1" >.+(?=<\/span)/g)[0].substr(21);
 		messageSender = messageContentHtml.match(/<b>\S+(?=<)/g)[0].substr(3);
@@ -76,7 +91,13 @@ function onUnreedDetected (unreedNum, pmListHtml){
 			message: '标题：' +  messageTitle + '\r\n内容：' + messageContent,
 			iconUrl: "http://www.cc98.org/favicon.ico"
 		}
-		chrome.notifications.create('', opt, function(){});
+		chrome.notifications.create('', opt, function(){});*/
+
 	}
+
+}
+
+function onNotificationClicked (notificationId){
+	console.log('notification' + notificationId + 'clicked.');
 
 }
