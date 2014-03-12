@@ -1,30 +1,19 @@
+var titleMax = 0;
+
 function appendToBody (table) {
   $("body").append(table);
 }
 
 function getAllUnreed () {
-  message1 = {
-    sender:"debug sender 1",
-    title:"debug title 1"
-  }
-  message2 = {
-    sender:"debug sender 2",
-    title:"debug title 2"
-  }
-
-  message3 = {
-    sender:"debug sender 3",
-    title:"debug title3 debug title3 debug title3 debug title3 debug title3 debug title3 debug title3"
-  }
-
-  messages = [message1,message2,message3];
+  messagesJson = localStorage.getItem('messages');
+  messages = JSON.parse(messagesJson);
 
   return messages;
 }
 
 function initTable() {
   table = $("<table></table>");
-  tableTitle = $("<tr></tr>").append($("<th></th>").text("Sender"), $("<th></th>").text("Titles"));
+  tableTitle = $("<tr></tr>").append($("<th></th>").text("Sender"), $("<th></th>").text("Title"));
   table.append(tableTitle);
   return table;
 }
@@ -35,9 +24,16 @@ function putMessagesToTable(messages, table) {
     senderCol = $("<th></th>").text(message.sender);
     messageRow = $("<tr></tr>").append(senderCol, tileCol);
     table.append(messageRow);
+    if (titleMax < message.title.length){
+      titleMax = message.title.length;
+    }
   });
 
   return table;
+}
+
+function setStyle(width) {
+  $("body").css('min-width', width + 'px');
 }
 
 $(document).ready(function (){
@@ -46,4 +42,5 @@ $(document).ready(function (){
   messages_all = getAllUnreed();
   table_new = putMessagesToTable (messages_all ,table_new);
   appendToBody(table_new);
+  setStyle(titleMax * 4 + 120);
 });

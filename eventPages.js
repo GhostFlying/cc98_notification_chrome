@@ -9,14 +9,25 @@ var MESSAGE_CONTENT_URL = "http://www.cc98.org/messanger.asp?action=read&id=";
 function init(){
 	console.log ('Init start.');
 	chrome.alarms.onAlarm.addListener(onAlarm);
-	//chrome.alarms.create('refresh', {periodInMinutes: 0.1});
+	chrome.alarms.create('refresh', {periodInMinutes: 1});
 }
 
 
 function onAlarm(alarm) {
 	console.log ('Got alarm', alarm);
 	chrome.cookies.get({url:"http://www.cc98.org", name:"cc98Simple"}, function (cookie){
-		checkIsSimple(cookie);
+		if (cookie == null) {
+			cookieSimple = {
+				url: "http://www.cc98.org",
+				name: "cc98Simple",
+				value: "0"
+			}
+			chrome.cookies.set(cookieSimple);
+		}
+		else {
+			checkIsSimple(cookie);
+		}
+		
 	});
 }
 
@@ -62,9 +73,10 @@ function onUnreedDetected (unreedNum, pmListHtml){
 	console.log (messageIdList);
 	messageTitles = pmListHtml.match(/\n\s{4}>.+(?=<\/a><\/td>)/g);
 	messageSenders = pmListHtml.match(/target=_blank>.+(?=<\/a>)/g);
+	messagesList = [];
 	//console.log(messageSenders);
 	for (i = 0; i < unreedNum; i++){
-		messageTitle = messageTitles[i].substr(5);
+		messageTitle = messageTitles[i].substr(5).replace(/&nbsp;/g,' ');
 		messageSender = messageSenders[i*2].substr(14);
 		//console.log (messageSender);
 		opt = {
@@ -76,6 +88,14 @@ function onUnreedDetected (unreedNum, pmListHtml){
 		console.log ('start notification' + messageIdList[i].substr(14));
 		chrome.notifications.create('message' + messageIdList[i].substr(14), opt, function(){});
 		chrome.notifications.onClicked.addListener(onNotificationClicked);
+		messageItem = {
+			sender:"",
+			title:""
+		}
+		messageItem.sender = messageSender;
+		messageItem.title = messageTitle;
+		messagesList.push(messageItem);
+		console.log (messagesList);
 		/*processUnreedId = parseInt(messageIdList[i].substr(14));
 		console.log(processUnreedId);*/
 /*		messageContentHtml = $.ajax({url:MESSAGE_CONTENT_URL + processUnreedId,async:false}).responseText;
@@ -94,6 +114,7 @@ function onUnreedDetected (unreedNum, pmListHtml){
 		chrome.notifications.create('', opt, function(){});*/
 
 	}
+	localStorage.setItem('messages', JSON.stringify(messagesList));
 
 }
 
