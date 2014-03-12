@@ -1,9 +1,10 @@
-﻿init();
-var MESSAGE_LIST_URL = "http://www.cc98.org/usersms.asp?action=inbox";
+﻿var MESSAGE_LIST_URL = "http://www.cc98.org/usersms.asp?action=inbox";
 var MESSAGE_CONTENT_URL = "http://www.cc98.org/messanger.asp?action=read&id=";
 var MESSAGE_INBOX_URL = "http://www.cc98.org/usersms.asp?action=inbox";
 
 var lastShowedMessageId;
+
+init();
 
 function init(){
 	console.log ('Init start.');
@@ -83,14 +84,13 @@ function getUnreedNum(){
 function onUnreedDetected (unreedNum, pmListHtml){
 	console.log ('onUnreedDetected start.');
 	messageIdList = pmListHtml.match(/name=id value=\d+/g);
-	//console.log (messageIdList);
 	messageTitles = pmListHtml.match(/\n\s{4}>.+(?=<\/a><\/td>)/g);
 	messageSenders = pmListHtml.match(/target=_blank>.+(?=<\/a>)/g);	
 	for (i = unreedNum - 1; i > -1; i--){
 		messageId = messageIdList[i].substr(14);
 		if (messageId > lastShowedMessageId) {
 			console.log ('New Message.');
-			messageTitle = messageTitles[i].substr(5).replace(/&nbsp;/g,' ');
+			messageTitle = messageTitles[i].substr(6).replace(/&nbsp;/g,' ');
 			messageSender = messageSenders[i*2].substr(14);
 			opt = {
 				type:"basic",
@@ -115,5 +115,5 @@ function onUnreedDetected (unreedNum, pmListHtml){
 function onNotificationClicked (notificationId){
 	console.log('notification' + notificationId + 'clicked.');
 	chrome.tabs.create({url: MESSAGE_CONTENT_URL + notificationId.substr(7),active:true}, function(){});
-
+	setTimeout(onAlarm,1000);
 }
