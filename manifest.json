@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
-  "name": "One-click Kittens",
-  "description": "This extension demonstrates a browser action with kittens.",
+  "name": "CC98 Messages Checker",
+  "description": "Check for unreed messages.",
   "version": "1.0",
   "permissions": [
     "cookies",
@@ -11,7 +11,7 @@
     "tabs"
   ],
   "browser_action": {
-    "default_icon": "icon.png"
+    "default_icon": "cc98.png"
     //"default_popup": "popup.html"
   },
   "background": {
