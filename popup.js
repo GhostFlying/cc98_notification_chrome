@@ -1,45 +1,49 @@
-/*var cookieCache = {
-
-  cookieStore: {},
-
-  reset: function() {
-    cookieStore = {};
-  },
-
-  add: function (cookies) {
-    for (var i in cookies){
-      if (cookies[i].name == 'aspsky'){
-        console.log (cookies[i]);
-        var username = cookies[i].value.match(/(username=)\w+(?=&usercookie)/g);        
-        var usernamestr = username [0];
-        usernamestr = usernamestr.substr(9);
-        console.log (usernamestr);
-        this.cookieStore[usernamestr] = cookies;
-        console.log (this.cookieStore);
-      }
-    }
-  }
+function appendToBody (table) {
+  $("body").append(table);
 }
 
-var cookieProcess = {
-
-
-
-  getCookie: function(){
-    console.log("getCookie started");
-    chrome.cookies.getAll({},function(cookies){
-      console.log("getCookie successfully.");
-      cookieCache.add(cookies);
-    });
+function getAllUnreed () {
+  message1 = {
+    sender:"debug sender 1",
+    title:"debug title 1"
+  }
+  message2 = {
+    sender:"debug sender 2",
+    title:"debug title 2"
   }
 
+  message3 = {
+    sender:"debug sender 3",
+    title:"debug title3 debug title3 debug title3 debug title3 debug title3 debug title3 debug title3"
+  }
 
+  messages = [message1,message2,message3];
+
+  return messages;
 }
 
+function initTable() {
+  table = $("<table></table>");
+  tableTitle = $("<tr></tr>").append($("<th></th>").text("Sender"), $("<th></th>").text("Titles"));
+  table.append(tableTitle);
+  return table;
+}
 
+function putMessagesToTable(messages, table) {
+  $.each(messages, function(key,message){
+    tileCol = $("<th></th>").text(message.title);
+    senderCol = $("<th></th>").text(message.sender);
+    messageRow = $("<tr></tr>").append(senderCol, tileCol);
+    table.append(messageRow);
+  });
 
-// Run our script as soon as the document's DOM is ready.
-document.addEventListener('DOMContentLoaded', function () {
-  console.log("loaded");
-  cookieProcess.getCookie();
-});*/
+  return table;
+}
+
+$(document).ready(function (){
+  console.log("Dom loaded.");
+  table_new = initTable();
+  messages_all = getAllUnreed();
+  table_new = putMessagesToTable (messages_all ,table_new);
+  appendToBody(table_new);
+});

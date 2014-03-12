@@ -9,7 +9,7 @@ var MESSAGE_CONTENT_URL = "http://www.cc98.org/messanger.asp?action=read&id=";
 function init(){
 	console.log ('Init start.');
 	chrome.alarms.onAlarm.addListener(onAlarm);
-	chrome.alarms.create('refresh', {periodInMinutes: 0.1});
+	//chrome.alarms.create('refresh', {periodInMinutes: 0.1});
 }
 
 
