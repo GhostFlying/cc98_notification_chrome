@@ -43,7 +43,6 @@ function onAlarm(alarm) {
 }
 
 function checkIsSimple(cookie) {
-	//console.log(cookie);
 	if (cookie.value == '0'){
 		console.log('Full version.');
 
@@ -70,7 +69,6 @@ function getUnreedNum(){
 	htmlobj=$.ajax({url:MESSAGE_LIST_URL,async:false});
 	pmListHtml = htmlobj.responseText;
 	indexOfUnreed = pmListHtml.indexOf('条未读消息');
-	//console.log (indexOfUnreed);
 	if (indexOfUnreed > 0 ) {
 		unreedNum = parseInt(pmListHtml.substr(indexOfUnreed - 1, 1));
 		console.log('Notify some unreed messages. Number: ' + unreedNum);
@@ -88,8 +86,6 @@ function onUnreedDetected (unreedNum, pmListHtml){
 	//console.log (messageIdList);
 	messageTitles = pmListHtml.match(/\n\s{4}>.+(?=<\/a><\/td>)/g);
 	messageSenders = pmListHtml.match(/target=_blank>.+(?=<\/a>)/g);	
-	//messagesList = [];
-	//console.log(messageTimes);
 	for (i = unreedNum - 1; i > -1; i--){
 		messageId = messageIdList[i].substr(14);
 		if (messageId > lastShowedMessageId) {
@@ -110,35 +106,9 @@ function onUnreedDetected (unreedNum, pmListHtml){
 		else {
 			console.log ('Old Message.');
 		}
-		
-/*		messageItem = {
-			sender:"",
-			title:""
-		}
-		messageItem.sender = messageSender;
-		messageItem.title = messageTitle;
-		messagesList.push(messageItem);
-		console.log (messagesList);*/
-		/*processUnreedId = parseInt(messageIdList[i].substr(14));
-		console.log(processUnreedId);*/
-/*		messageContentHtml = $.ajax({url:MESSAGE_CONTENT_URL + processUnreedId,async:false}).responseText;
-		messageTitle = messageContentHtml.match(/消息标题：.+(?=<\/b>)/g)[0].substr(5);
-		messageContent = messageContentHtml.match(/<span id="ubbcode1" >.+(?=<\/span)/g)[0].substr(21);
-		messageSender = messageContentHtml.match(/<b>\S+(?=<)/g)[0].substr(3);
-		console.log('message title:' + messageTitle);
-		console.log('message content:' + messageContent);
-		console.log('message sender:' + messageSender);
-		opt = {
-			type:"basic",
-			title: '收到一条来自 ' + messageSender + '的新消息',
-			message: '标题：' +  messageTitle + '\r\n内容：' + messageContent,
-			iconUrl: "http://www.cc98.org/favicon.ico"
-		}
-		chrome.notifications.create('', opt, function(){});*/
 
 	}
 	localStorage.setItem('lastShowedMessageId', lastShowedMessageId);
-	//localStorage.setItem('messages', JSON.stringify(messagesList));
 
 }
 
