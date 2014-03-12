@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "CC98 Messages Checker",
   "description": "Check for unreed messages.",
-  "version": "1.0",
+  "version": "0.1",
   "permissions": [
     "cookies",
     "*://*.cc98.org/*",

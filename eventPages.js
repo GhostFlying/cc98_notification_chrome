@@ -99,7 +99,7 @@ function onUnreedDetected (unreedNum, pmListHtml){
 			opt = {
 				type:"basic",
 				title: '收到一条来自  ' + messageSender + '  的新消息',
-				message: '标题：' +  messageTitle + '\n     点击查看详细内容',
+				message: '标题：' +  messageTitle,
 				iconUrl: "http://www.cc98.org/favicon.ico"
 			}
 			console.log ('start notification' + messageId);
