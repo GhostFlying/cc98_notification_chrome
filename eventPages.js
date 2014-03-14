@@ -21,7 +21,8 @@ function init(){
 }
 
 function goToInbox(){
-	chrome.tabs.create({url:MESSAGE_INBOX_URL,active:true}, function(){})
+	chrome.tabs.create({url:MESSAGE_INBOX_URL,active:true}, function(){});
+	setTimeout(onAlarm,1000);
 }
 
 
