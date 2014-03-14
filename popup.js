@@ -1,4 +1,4 @@
-var titleMax = 0;
+/*var titleMax = 0;
 
 function appendToBody (table) {
   $("body").append(table);
@@ -30,17 +30,48 @@ function putMessagesToTable(messages, table) {
   });
 
   return table;
-}
+}*/
 
 function setStyle(width) {
   $("body").css('min-width', width + 'px');
 }
 
+function putMessages() {
+  messages = [];
+
+  for (i=0 ; i < 20; i++){
+    oneMessage = {
+      sender: 'sender' + i,
+      title: 'title' + i
+    }
+    messages.push(oneMessage);
+  }
+
+  $.each(messages, function(index, message){
+    messageDiv = $('<div></div>');
+    messageDiv.attr('id', 'message' + index);
+    messageDiv.addClass('message');
+
+    senderDiv = $('<div></div>').text(message.sender);
+    senderDiv.addClass('sender');
+
+    titleDiv = $('<div></div>').text(message.title);
+    titleDiv.addClass('title');
+
+    messageDiv.append(senderDiv, titleDiv);
+
+    spitLine = $('<hr>');
+    spitLine.css('margin', '8px');
+    $('body').append(messageDiv, spitLine);
+  });
+}
+
 $(document).ready(function (){
   console.log("Dom loaded.");
-  table_new = initTable();
+  putMessages();
+/*  table_new = initTable();
   messages_all = getAllUnreed();
   table_new = putMessagesToTable (messages_all ,table_new);
   appendToBody(table_new);
-  setStyle(titleMax * 4 + 120);
+  setStyle(titleMax * 4 + 120);*/
 });
