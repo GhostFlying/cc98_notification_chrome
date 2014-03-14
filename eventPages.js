@@ -1,14 +1,15 @@
-﻿init();
-var MESSAGE_LIST_URL = "http://www.cc98.org/usersms.asp?action=inbox";
+﻿var MESSAGE_LIST_URL = "http://www.cc98.org/usersms.asp?action=inbox";
 var MESSAGE_CONTENT_URL = "http://www.cc98.org/messanger.asp?action=read&id=";
 var MESSAGE_INBOX_URL = "http://www.cc98.org/usersms.asp?action=inbox";
 
 var lastShowedMessageId;
 
+init();
+
 function init(){
 	console.log ('Init start.');
 	chrome.alarms.onAlarm.addListener(onAlarm);
-	chrome.alarms.create('refresh', {periodInMinutes: 5});
+	chrome.alarms.create('refresh', {periodInMinutes: 0.1});
 	chrome.browserAction.onClicked.addListener(goToInbox);
 
 	lastShowedMessageId = localStorage.getItem('lastShowedMessageId');
@@ -145,5 +146,5 @@ function onUnreedDetected (unreedNum, pmListHtml){
 function onNotificationClicked (notificationId){
 	console.log('notification' + notificationId + 'clicked.');
 	chrome.tabs.create({url: MESSAGE_CONTENT_URL + notificationId.substr(7),active:true}, function(){});
-
+	setTimeout(onAlarm,1000);
 }
