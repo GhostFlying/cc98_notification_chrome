@@ -1,4 +1,4 @@
-/*var titleMax = 0;
+﻿/*var titleMax = 0;
 
 function appendToBody (table) {
   $("body").append(table);
@@ -47,6 +47,17 @@ function putMessages() {
     messages.push(oneMessage);
   }
 
+  divTitle = $('<div></div>');
+  senderTitle = $('<div></div>').text('来自');
+  titleTitle = $('<div></div>').text('主题');
+
+  divTitle.addClass('message');
+  senderTitle.addClass('sendertitle');
+  titleTitle.addClass('titletitle');
+
+  divTitle.append(senderTitle,titleTitle);
+  $('body').append(divTitle);
+
   $.each(messages, function(index, message){
     messageDiv = $('<div></div>');
     messageDiv.attr('id', 'message' + index);
@@ -66,9 +77,21 @@ function putMessages() {
   });
 }
 
+
+function addHeader() {
+  inboxLink = $('<a></a>').text('点此访问98收件箱');
+  inboxLink.addClass('inboxLink');
+  inboxLink.attr('href', 'http://www.cc98.org/usersms.asp?action=inbox');
+  inboxLink.attr('target', '_blank');
+
+  $('body').append(inboxLink);
+}
+
 $(document).ready(function (){
   console.log("Dom loaded.");
+  addHeader();
   putMessages();
+
 /*  table_new = initTable();
   messages_all = getAllUnreed();
   table_new = putMessagesToTable (messages_all ,table_new);
