@@ -48,7 +48,8 @@ function checkIsSimple(cookie) {
 	//console.log(cookie);
 	if (cookie.value == '0'){
 		console.log('Full version.');
-
+		getUnreedNum(true);
+/*
 		cookieNew = {
 			url: "http://www.cc98.org",
 			name: cookie.name,
@@ -59,45 +60,63 @@ function checkIsSimple(cookie) {
 		getUnreedNum();
 		cookieNew.value = '0';
 		chrome.cookies.set(cookieNew);
-		console.log('Changed to Full.');
+		console.log('Changed to Full.');*/
 	}
 	else {
 		console.log('Simple version.')
-		getUnreedNum();
+		getUnreedNum(false);
 	}
 
 }
 
-function getUnreedNum(){
+function getUnreedNum(isFull){
 	htmlobj=$.ajax({url:MESSAGE_LIST_URL,async:false});
 	pmListHtml = htmlobj.responseText;
-	indexOfUnreed = pmListHtml.indexOf('条未读消息');
+	if (isFull){
+		indexOfUnreed = pmListHtml.indexOf(' 新</span></a>)');
+	}
+	else {
+		indexOfUnreed = pmListHtml.indexOf('条未读消息');
+	}	
 	//console.log (indexOfUnreed);
 	if (indexOfUnreed > 0 ) {
 		unreedNum = parseInt(pmListHtml.substr(indexOfUnreed - 1, 1));
 		console.log('Notify some unreed messages. Number: ' + unreedNum);
 		chrome.browserAction.setBadgeText({text:unreedNum.toString()});
-		onUnreedDetected(unreedNum, pmListHtml);
+		onUnreedDetected(isFull, unreedNum, pmListHtml);
 	}
 	else {
 		chrome.browserAction.setBadgeText({text:""});
 	}
 }
 
-function onUnreedDetected (unreedNum, pmListHtml){
-	console.log ('onUnreedDetected start.');
-	messageIdList = pmListHtml.match(/name=id value=\d+/g);
-	//console.log (messageIdList);
-	messageTitles = pmListHtml.match(/\n\s{4}>.+(?=<\/a><\/td>)/g);
-	messageSenders = pmListHtml.match(/target=_blank>.+(?=<\/a>)/g);	
+function onUnreedDetected (isFull, unreedNum, pmListHtml){
+	console.log ('onUnreedDetected start.IsFull ' + isFull);
+		
+	if (isFull){
+
+	}
+	else {
+		messageIdList = pmListHtml.match(/name=id value=\d+/g);
+		messageTitles = pmListHtml.match(/\n\s{4}>.+(?=<\/a><\/td>)/g);
+		messageSenders = pmListHtml.match(/target=_blank>.+(?=<\/a>)/g);
+		for (i = unreedNum - 1; i> -1; i--){
+			messageIdList[i] = messageIdList[i].substr(14);
+			messageTitles[i] = messageTitles[i].substr(5).replace(/&nbsp;/g,' ');
+			messageSenders[i*2] = messageSenders[i*2].substr(14);
+		}
+/*		console.log (messageIdList);
+		console.log (messageTitles);
+		console.log (messageSenders);*/
+	}
 	//messagesList = [];
 	//console.log(messageTimes);
 	for (i = unreedNum - 1; i > -1; i--){
-		messageId = messageIdList[i].substr(14);
+		messageId = messageIdList[i];
 		if (messageId > lastShowedMessageId) {
 			console.log ('New Message.');
-			messageTitle = messageTitles[i].substr(5).replace(/&nbsp;/g,' ');
-			messageSender = messageSenders[i*2].substr(14);
+			messageTitle = messageTitles[i];
+			messageSender = messageSenders[i*2];
 			opt = {
 				type:"basic",
 				title: '收到一条来自  ' + messageSender + '  的新消息',
