@@ -1,12 +1,22 @@
 ﻿<!DOCTYPE html>
 <html>
-<head><title>CC98 Messages Checker Options</title></head>
+<head><title>CC98 Messages Checker Options</title>
+<style>
+    .content{
+      display: inline-block;
+      margin: 5px;
+      width: 80px;
+    }
+</style>
+</head>
 <body>
 
 <div> 当前登录用户 </div>
-<div id = 'loginNow'></div>
+<div id = 'loginNow' class = content></div>
+<div id = 'addStatus' class = content></div>
 <button id = 'add'>Add to checker</button>
 
+<script src="jquery.js"></script>
 <script src="options.js"></script>
 </body>
 </html>
