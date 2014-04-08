@@ -3,6 +3,7 @@ var MESSAGE_CONTENT_URL = "http://www.cc98.org/messanger.asp?action=read&id=";
 var MESSAGE_INBOX_URL = "http://www.cc98.org/usersms.asp?action=inbox";
 
 var lastShowedMessageId;
+var lastClickedNotificationId;
 
 init();
 
@@ -92,31 +93,31 @@ function getUnreedNum(isFull){
 
 function onUnreedDetected (isFull, unreedNum, pmListHtml){
 	console.log ('onUnreedDetected start.IsFull ' + isFull);
-		
-	if (isFull){
 
+	messageIdList = pmListHtml.match(/name=id value=\d+/g);
+	messageSenders = pmListHtml.match(/target="_blank">.+(?=<\/a>)/g);
+	if (isFull){
+		messageTitles = pmListHtml.match(/.+(?=<\/a><\/td>)/g);		
+		for (i = 0; i < unreedNum; i++){
+			messageTitles[i] = messageTitles[i*2].substr(5).replace(/&nbsp;/g,' ');
+		}
 	}
 	else {
-		messageIdList = pmListHtml.match(/name=id value=\d+/g);
 		messageTitles = pmListHtml.match(/\n\s{4}>.+(?=<\/a><\/td>)/g);
-		messageSenders = pmListHtml.match(/target=_blank>.+(?=<\/a>)/g);
-		for (i = unreedNum - 1; i> -1; i--){
-			messageIdList[i] = messageIdList[i].substr(14);
-			messageTitles[i] = messageTitles[i].substr(5).replace(/&nbsp;/g,' ');
-			messageSenders[i*2] = messageSenders[i*2].substr(14);
+		for (i = 0; i < unreedNum; i++){
+			messageTitles[i] = messageTitles[i].substr(6).replace(/&nbsp;/g,' ');
 		}
-/*		console.log (messageIdList);
-		console.log (messageTitles);
-		console.log (messageSenders);*/
 	}
-	//messagesList = [];
-	//console.log(messageTimes);
+	for (i = 0; i < unreedNum; i++){
+		messageIdList[i] = messageIdList[i].substr(14);
+		messageSenders[i] = messageSenders[i+2].substr(16);
+	}
 	for (i = unreedNum - 1; i > -1; i--){
 		messageId = messageIdList[i];
 		if (messageId > lastShowedMessageId) {
 			console.log ('New Message.');
 			messageTitle = messageTitles[i];
-			messageSender = messageSenders[i*2];
+			messageSender = messageSenders[i];
 			opt = {
 				type:"basic",
 				title: '收到一条来自  ' + messageSender + '  的新消息',
@@ -131,40 +132,17 @@ function onUnreedDetected (isFull, unreedNum, pmListHtml){
 		else {
 			console.log ('Old Message.');
 		}
-		
-/*		messageItem = {
-			sender:"",
-			title:""
-		}
-		messageItem.sender = messageSender;
-		messageItem.title = messageTitle;
-		messagesList.push(messageItem);
-		console.log (messagesList);*/
-		/*processUnreedId = parseInt(messageIdList[i].substr(14));
-		console.log(processUnreedId);*/
-/*		messageContentHtml = $.ajax({url:MESSAGE_CONTENT_URL + processUnreedId,async:false}).responseText;
-		messageTitle = messageContentHtml.match(/消息标题：.+(?=<\/b>)/g)[0].substr(5);
-		messageContent = messageContentHtml.match(/<span id="ubbcode1" >.+(?=<\/span)/g)[0].substr(21);
-		messageSender = messageContentHtml.match(/<b>\S+(?=<)/g)[0].substr(3);
-		console.log('message title:' + messageTitle);
-		console.log('message content:' + messageContent);
-		console.log('message sender:' + messageSender);
-		opt = {
-			type:"basic",
-			title: '收到一条来自 ' + messageSender + '的新消息',
-			message: '标题：' +  messageTitle + '\r\n内容：' + messageContent,
-			iconUrl: "http://www.cc98.org/favicon.ico"
-		}
-		chrome.notifications.create('', opt, function(){});*/
 
 	}
 	localStorage.setItem('lastShowedMessageId', lastShowedMessageId);
-	//localStorage.setItem('messages', JSON.stringify(messagesList));
 
 }
 
 function onNotificationClicked (notificationId){
 	console.log('notification' + notificationId + 'clicked.');
-	chrome.tabs.create({url: MESSAGE_CONTENT_URL + notificationId.substr(7),active:true}, function(){});
-	setTimeout(onAlarm,1000);
+	if (lastClickedNotificationId != notificationId) {
+		chrome.tabs.create({url: MESSAGE_CONTENT_URL + notificationId.substr(7),active:true}, function(){});
+		setTimeout(onAlarm,1000);
+	}
+	lastClickedNotificationId = notificationId;	
 }
