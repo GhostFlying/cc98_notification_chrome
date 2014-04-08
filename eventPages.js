@@ -50,18 +50,6 @@ function checkIsSimple(cookie) {
 	if (cookie.value == '0'){
 		console.log('Full version.');
 		getUnreedNum(true);
-/*
-		cookieNew = {
-			url: "http://www.cc98.org",
-			name: cookie.name,
-			value: "1"
-		}
-		chrome.cookies.set(cookieNew);
-		console.log('Changed to Simple.');
-		getUnreedNum();
-		cookieNew.value = '0';
-		chrome.cookies.set(cookieNew);
-		console.log('Changed to Full.');*/
 	}
 	else {
 		console.log('Simple version.')
