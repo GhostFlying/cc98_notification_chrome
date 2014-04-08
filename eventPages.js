@@ -3,6 +3,9 @@ var MESSAGE_CONTENT_URL = "http://www.cc98.org/messanger.asp?action=read&id=";
 var MESSAGE_INBOX_URL = "http://www.cc98.org/usersms.asp?action=inbox";
 
 var lastShowedMessageId;
+var lastClickedNotificationId;
+
+init();
 
 init();
 
@@ -21,7 +24,8 @@ function init(){
 }
 
 function goToInbox(){
-	chrome.tabs.create({url:MESSAGE_INBOX_URL,active:true}, function(){})
+	chrome.tabs.create({url:MESSAGE_INBOX_URL,active:true}, function(){});
+	setTimeout(onAlarm,1000);
 }
 
 
@@ -46,7 +50,8 @@ function onAlarm(alarm) {
 function checkIsSimple(cookie) {
 	if (cookie.value == '0'){
 		console.log('Full version.');
-
+		getUnreedNum(true);
+/*
 		cookieNew = {
 			url: "http://www.cc98.org",
 			name: cookie.name,
@@ -57,41 +62,62 @@ function checkIsSimple(cookie) {
 		getUnreedNum();
 		cookieNew.value = '0';
 		chrome.cookies.set(cookieNew);
-		console.log('Changed to Full.');
+		console.log('Changed to Full.');*/
 	}
 	else {
 		console.log('Simple version.')
-		getUnreedNum();
+		getUnreedNum(false);
 	}
 
 }
 
-function getUnreedNum(){
+function getUnreedNum(isFull){
 	htmlobj=$.ajax({url:MESSAGE_LIST_URL,async:false});
 	pmListHtml = htmlobj.responseText;
-	indexOfUnreed = pmListHtml.indexOf('条未读消息');
+	if (isFull){
+		indexOfUnreed = pmListHtml.indexOf(' 新</span></a>)');
+	}
+	else {
+		indexOfUnreed = pmListHtml.indexOf('条未读消息');
+	}
 	if (indexOfUnreed > 0 ) {
 		unreedNum = parseInt(pmListHtml.substr(indexOfUnreed - 1, 1));
 		console.log('Notify some unreed messages. Number: ' + unreedNum);
 		chrome.browserAction.setBadgeText({text:unreedNum.toString()});
-		onUnreedDetected(unreedNum, pmListHtml);
+		onUnreedDetected(isFull, unreedNum, pmListHtml);
 	}
 	else {
 		chrome.browserAction.setBadgeText({text:""});
 	}
 }
 
-function onUnreedDetected (unreedNum, pmListHtml){
-	console.log ('onUnreedDetected start.');
+function onUnreedDetected (isFull, unreedNum, pmListHtml){
+	console.log ('onUnreedDetected start.IsFull ' + isFull);
+
 	messageIdList = pmListHtml.match(/name=id value=\d+/g);
-	messageTitles = pmListHtml.match(/\n\s{4}>.+(?=<\/a><\/td>)/g);
-	messageSenders = pmListHtml.match(/target=_blank>.+(?=<\/a>)/g);	
+	messageSenders = pmListHtml.match(/target="_blank">.+(?=<\/a>)/g);
+	if (isFull){
+		messageTitles = pmListHtml.match(/.+(?=<\/a><\/td>)/g);		
+		for (i = 0; i < unreedNum; i++){
+			messageTitles[i] = messageTitles[i*2].substr(5).replace(/&nbsp;/g,' ');
+		}
+	}
+	else {
+		messageTitles = pmListHtml.match(/\n\s{4}>.+(?=<\/a><\/td>)/g);
+		for (i = 0; i < unreedNum; i++){
+			messageTitles[i] = messageTitles[i].substr(6).replace(/&nbsp;/g,' ');
+		}
+	}
+	for (i = 0; i < unreedNum; i++){
+		messageIdList[i] = messageIdList[i].substr(14);
+		messageSenders[i] = messageSenders[i+2].substr(16);
+	}
 	for (i = unreedNum - 1; i > -1; i--){
-		messageId = messageIdList[i].substr(14);
+		messageId = messageIdList[i];
 		if (messageId > lastShowedMessageId) {
 			console.log ('New Message.');
-			messageTitle = messageTitles[i].substr(6).replace(/&nbsp;/g,' ');
-			messageSender = messageSenders[i*2].substr(14);
+			messageTitle = messageTitles[i];
+			messageSender = messageSenders[i];
 			opt = {
 				type:"basic",
 				title: '收到一条来自  ' + messageSender + '  的新消息',
@@ -114,6 +140,9 @@ function onUnreedDetected (unreedNum, pmListHtml){
 
 function onNotificationClicked (notificationId){
 	console.log('notification' + notificationId + 'clicked.');
-	chrome.tabs.create({url: MESSAGE_CONTENT_URL + notificationId.substr(7),active:true}, function(){});
-	setTimeout(onAlarm,1000);
+	if (lastClickedNotificationId != notificationId) {
+		chrome.tabs.create({url: MESSAGE_CONTENT_URL + notificationId.substr(7),active:true}, function(){});
+		setTimeout(onAlarm,1000);
+	}
+	lastClickedNotificationId = notificationId;	
 }
