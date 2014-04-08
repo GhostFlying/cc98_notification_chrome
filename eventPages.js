@@ -10,7 +10,7 @@ init();
 function init(){
 	console.log ('Init start.');
 	chrome.alarms.onAlarm.addListener(onAlarm);
-	chrome.alarms.create('refresh', {periodInMinutes: 0.1});
+	chrome.alarms.create('refresh', {periodInMinutes: 5});
 	chrome.browserAction.onClicked.addListener(goToInbox);
 
 	lastShowedMessageId = localStorage.getItem('lastShowedMessageId');
