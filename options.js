@@ -18,11 +18,23 @@ function getUserNow(){
 function setUserNow(cookie){
   username = cookie.value.match(/username=.+(?=&usercookies)/g)[0].substr(9);
   $('#loginNow').text(decodeURIComponent(username));
+  chrome.storage.sync.get("checkerList",function (item){
+    $.each(item.checkerList,function(index,value){
+      username = value.match(/username=.+(?=&usercookies)/g)[0].substr(9); 
+      settedUserDiv = $('<div></div>').text(decodeURIComponent(username));
+      $('#settedUser').append(settedUserDiv);
+    });
+  });
 }
 
 function addToCheckerList(){
+  var ACTION_NONE = 0;
+  var ACTION_ADD = 1;
+  var ACTION_UODATE = 2;
+
   console.log ('addToCheckerList');
   var checkerList;
+  needAddFlag = ACTION_ADD;
   if (cookieNow != null) {
     chrome.storage.sync.get("checkerList",function (item){      
       if (isEmptyObject(item)){
@@ -32,15 +44,34 @@ function addToCheckerList(){
       else {
         console.log ('not empty');
         checkerList = item.checkerList;
+        username = cookieNow.value.match(/username=.+(?=&usercookies)/g)[0].substr(9);        
+        $.each(checkerList, function(index, cookieStr){
+          if (cookieStr == cookieNow.value){
+            console.log ('cookie duplicated.');
+            needAddFlag = ACTION_NONE;
+            return;
+          } 
+          else if (cookieStr.indexOf('username=' + username + '&usercookies') > -1){
+            checkerList[index] = cookieNow.value;
+            console.log ('update cookie.');
+            needAddFlag = ACTION_UODATE;
+            return;
+          }
+        });        
       }
-      checkerList.push(cookieNow.value);
-      chrome.storage.sync.set({'checkerList':checkerList}, function(){
-      console.log(checkerList);
-    });
-    });
-   
-  }
 
+      switch (needAddFlag) {
+        case ACTION_ADD:
+          checkerList.push(cookieNow.value);
+        case ACTION_UODATE:
+          chrome.storage.sync.set({'checkerList':checkerList}, function(){
+          console.log(checkerList);
+          });
+          break;
+        case ACTION_NONE:
+      }
+    });   
+  }
 }
 
 
@@ -56,4 +87,4 @@ $('#add').click(function(){
   addToCheckerList();
 });
 
-chrome.storage.sync.clear(function(){});
+//chrome.storage.sync.clear(function(){});
