@@ -4,7 +4,8 @@ var MESSAGE_INBOX_URL = "http://www.cc98.org/usersms.asp?action=inbox";
 
 var lastShowedMessageId;
 var lastClickedNotificationId;
-
+var checkUserTotal = 0;
+var chekerUserCount = 0;
 
 
 init();
@@ -12,11 +13,11 @@ init();
 function init(){
 	console.log ('Init start.');
 	chrome.alarms.onAlarm.addListener(onAlarm);
-	//chrome.alarms.create('refresh', {periodInMinutes: 0.1});
+	chrome.alarms.create('refresh', {periodInMinutes: 0.2});
 	chrome.browserAction.onClicked.addListener(goToInbox);
 
 	lastShowedMessageId = localStorage.getItem('lastShowedMessageId');
-
+	lastShowedMessageId = 0;//for debug.
 	if (lastShowedMessageId == null) {
 		console.log ("No lastShowedMessageId record.");
 		lastShowedMessageId = 0;
@@ -28,9 +29,31 @@ function goToInbox(){
 	setTimeout(onAlarm,1000);
 }
 
-function switchUser() {
+function switchUser(cookieNow, cookieSwitchValue) {
+	username = cookieSwitchValue.match(/username=.+(?=&usercookies)/g)[0].substr(9);
+	console.log('switchUser to ' + username);
+	//console.log (cookieNow);
+	//backup the original cookie.
+	cookieOriginal = {
+		url:"http://www.cc98.org",
+		expirationDate:0,
+		name:"aspsky",
+		value:""
+	}
+	cookieOriginal.value = cookieNow.value;
+	cookieOriginal.expirationDate = cookieNow.expirationDate;
+	//setup the new cookie.
+	var cookieToSwitch = {};
+	$.extend(cookieToSwitch, cookieOriginal);	
+	//cookieToSwitch = cookieOriginal;
+	cookieToSwitch.value = cookieSwitchValue;
+	//switch the cookie.
+	chrome.cookies.set(cookieToSwitch);	
+	return cookieOriginal;             
 
-	lastShowedMessageId = 0;
+
+
+/*	lastShowedMessageId = 0;
 	chrome.cookies.get({url:"http://www.cc98.org", name:"aspsky"}, function (cookie){    
 	    if (cookie == null){
 	    	cookieNow = null;
@@ -62,43 +85,84 @@ function switchUser() {
   				onAlarm("switch to " + username);
   			});
   		});
-  	});
+  	});*/
 }
 
 function onAlarm(alarm) {
 	console.log ('Got alarm', alarm);
 	chrome.cookies.get({url:"http://www.cc98.org", name:"cc98Simple"}, function (cookie){
-		if (cookie == null) {
-			cookieSimple = {
-				url: "http://www.cc98.org",
-				name: "cc98Simple",
-				value: "0"
+		chrome.cookies.get({url:"http://www.cc98.org", name:"aspsky"}, function(cookieLog){
+			var unreedNumberTotal = 0;
+			//step 1 check the user now login.
+			var isFull = false;
+			if (cookie == null) {
+				cookieFull = {
+					url: "http://www.cc98.org",
+					name: "cc98Simple",
+					value: "0"
+				}
+				chrome.cookies.set(cookieFull);
+				//getUnreedNum(false);
+			}			
+			else {
+				isFull = checkIsFull(cookie);
 			}
-			chrome.cookies.set(cookieSimple);
-		}
-		else {
-			checkIsSimple(cookie);
-		}
-		
+			pmListHtml = getpmListHtml();
+			unreedNumber = getUnreedNum(isFull, pmListHtml);
+			if (unreedNumber > 0 ) {
+				unreedNumberTotal = unreedNumber;
+				onUnreedDetected(isFull, unreedNumber, pmListHtml);
+			}		
+
+			//step 2 check the user in the list.
+			//console.log (cookieLog.value);
+			chrome.storage.sync.get("checkerList",function (item){
+				checkerList = item.checkerList;
+				checkUserTotal = checkerList.length;
+				if (chekerUserCount >= checkUserTotal) {
+					chekerUserCount = 0;
+				}
+				cookieOriginal = switchUser(cookieLog, checkerList[chekerUserCount]);
+				chekerUserCount = chekerUserCount + 1;
+				pmListHtml = getpmListHtml(isFull);
+				unreedNumber = getUnreedNum(isFull, pmListHtml);
+				if (unreedNumber > 0) {
+					unreedNumberTotal = unreedNumberTotal + unreedNumber;
+					onUnreedDetected(isFull, unreedNumber, pmListHtml);
+				}		
+				console.log ('Switch back to origin.');
+				chrome.cookies.set(cookieOriginal);
+				if (unreedNumberTotal > 0) {
+					chrome.browserAction.setBadgeText({text:unreedNumberTotal.toString()});
+				}			
+			});
+		});	
 	});
 }
 
-function checkIsSimple(cookie) {
+function checkIsFull(cookie) {
 	//console.log(cookie);
 	if (cookie.value == '0'){
 		console.log('Full version.');
-		getUnreedNum(true);
+		//getUnreedNum(true);
+		return true;
 	}
 	else {
 		console.log('Simple version.')
-		getUnreedNum(false);
+		//getUnreedNum(false);
+		return false;
 	}
 
 }
 
-function getUnreedNum(isFull){
+function getpmListHtml () {
 	htmlobj=$.ajax({url:MESSAGE_LIST_URL,async:false});
 	pmListHtml = htmlobj.responseText;
+
+	return pmListHtml;
+}
+
+function getUnreedNum(isFull, pmListHtml){	
 	if (isFull){
 		indexOfUnreed = pmListHtml.indexOf(' 新</span></a>)');
 	}
@@ -109,11 +173,13 @@ function getUnreedNum(isFull){
 	if (indexOfUnreed > 0 ) {
 		unreedNum = parseInt(pmListHtml.substr(indexOfUnreed - 1, 1));
 		console.log('Notify some unreed messages. Number: ' + unreedNum);
-		chrome.browserAction.setBadgeText({text:unreedNum.toString()});
-		onUnreedDetected(isFull, unreedNum, pmListHtml);
+		return unreedNum;
+		//chrome.browserAction.setBadgeText({text:unreedNum.toString()});
+		//onUnreedDetected(isFull, unreedNum, pmListHtml);
 	}
 	else {
-		chrome.browserAction.setBadgeText({text:""});
+		return 0;
+		//chrome.browserAction.setBadgeText({text:""});
 	}
 }
 
