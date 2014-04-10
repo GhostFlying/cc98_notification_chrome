@@ -1,16 +1,18 @@
-﻿var MESSAGE_LIST_URL = "http://www.cc98.org/usersms.asp?action=inbox";
+var MESSAGE_LIST_URL = "http://www.cc98.org/usersms.asp?action=inbox";
 var MESSAGE_CONTENT_URL = "http://www.cc98.org/messanger.asp?action=read&id=";
 var MESSAGE_INBOX_URL = "http://www.cc98.org/usersms.asp?action=inbox";
 
 var lastShowedMessageId;
 var lastClickedNotificationId;
 
+
+
 init();
 
 function init(){
 	console.log ('Init start.');
 	chrome.alarms.onAlarm.addListener(onAlarm);
-	chrome.alarms.create('refresh', {periodInMinutes: 0.1});
+	//chrome.alarms.create('refresh', {periodInMinutes: 0.1});
 	chrome.browserAction.onClicked.addListener(goToInbox);
 
 	lastShowedMessageId = localStorage.getItem('lastShowedMessageId');
@@ -26,6 +28,42 @@ function goToInbox(){
 	setTimeout(onAlarm,1000);
 }
 
+function switchUser() {
+
+	lastShowedMessageId = 0;
+	chrome.cookies.get({url:"http://www.cc98.org", name:"aspsky"}, function (cookie){    
+	    if (cookie == null){
+	    	cookieNow = null;
+	    	console.log('Not log in.');
+	    }
+	    else {
+	    	console.log(cookie);
+	    	cookieOld = {
+	  			url:"http://www.cc98.org",
+	  			name:"aspsky",
+	  			expirationDate:0,
+	  			value:""
+	  		} 
+	  		cookieOld.value = cookie.value;
+	  		cookieOld.expirationDate = cookie.expirationDate;  
+	    }
+
+	    cookieNew = {
+  			url:"http://www.cc98.org",
+  			name:"aspsky",
+  			value:""
+  		}
+
+  		chrome.storage.sync.get("checkerList",function (item){
+  			$.each(item.checkerList, function(index, value) {
+  				cookieNew.value = value;
+  				chrome.cookies.set(cookieNew);
+  				username = value.match(/username=.+(?=&usercookies)/g)[0].substr(9);
+  				onAlarm("switch to " + username);
+  			});
+  		});
+  	});
+}
 
 function onAlarm(alarm) {
 	console.log ('Got alarm', alarm);
