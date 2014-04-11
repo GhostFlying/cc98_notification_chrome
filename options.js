@@ -24,7 +24,15 @@ function setUserNow(cookie) {
         $.each(item.checkerList, function(index, value) {
             username = value.match(/username=.+(?=&usercookies)/g)[0].substr(9);
             settedUserDiv = $('<div></div>').text(decodeURIComponent(username));
-            $('#settedUser').append(settedUserDiv);
+            removeButton = $('<button></button>').text('Remove');
+            settedUserDiv.addClass('content');
+            removeButton.addClass('content');
+            removeButton.click(function(){
+                removeFromCheckerList(username);
+            });
+            settedUserArray = $('<div></div>');
+            settedUserArray.append(settedUserDiv, removeButton);
+            $('#settedUser').append(settedUserArray);
         });
     });
 }
@@ -76,6 +84,29 @@ function addToCheckerList() {
     }
 }
 
+function removeFromCheckerList(username){
+    console.log ('removeFromCheckerList');
+
+    chrome.storage.sync.get("checkerList", function(item) {
+        checkerList = item.checkerList;
+
+        $.each (checkerList, function(index, value){
+            if (value.indexOf(username) > -1) {
+                checkerList.splice(index,1);
+                return;
+            }
+        });
+        chrome.storage.sync.set({
+                        'checkerList': checkerList
+                    }, function() {
+                        console.log(checkerList);
+        });
+    });
+    $('#settedUser').text('');
+    getUserNow();
+
+}
+
 
 function isEmptyObject(obj) {
     for (var name in obj) {
@@ -87,6 +118,8 @@ function isEmptyObject(obj) {
 getUserNow();
 $('#add').click(function() {
     addToCheckerList();
+    $('#settedUser').text('');
+    getUserNow();
 });
 
 //chrome.storage.sync.clear(function(){});

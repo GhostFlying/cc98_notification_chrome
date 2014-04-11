@@ -16,7 +16,7 @@ function init(){
 	chrome.alarms.onAlarm.addListener(onAlarm);
 	chrome.alarms.create('refresh', {periodInMinutes: 5});
 	chrome.browserAction.onClicked.addListener(goToInbox);
-	lastShowedMessageIdArray = localStorage.getItem('lastShowedMessageIdArray');	
+	lastShowedMessageIdArray = JSON.parse(localStorage.getItem('lastShowedMessageIdArray'));
 	//lastShowedMessageIdArray = null;//for debug.
 	if (lastShowedMessageIdArray == null) {
 		console.log ("No lastShowedMessageIdArray record.");
@@ -73,10 +73,10 @@ function onAlarm(alarm) {
 				isFull = checkIsFull(cookie);
 			}
 			pmListHtml = getpmListHtml();
-			unreedNumber = getUnreedNum(isFull, pmListHtml);			
+			unreedNumber = getUnreedNum(isFull, pmListHtml);	
+			username = cookieLog.value.match(/username=.+(?=&usercookies)/g)[0].substr(9);		
 			if (unreedNumber > 0 ) {
-				unreedNumberTotal = unreedNumber;
-				username = cookieLog.value.match(/username=.+(?=&usercookies)/g)[0].substr(9);
+				unreedNumberTotal = unreedNumber;				
 				onUnreedDetected(isFull, unreedNumber, pmListHtml, username);
 			}		
 
@@ -85,6 +85,9 @@ function onAlarm(alarm) {
 			chrome.storage.sync.get("checkerList",function (item){
 				checkerList = item.checkerList;
 				checkUserTotal = checkerList.length;
+				if (checkUserTotal == 0){
+					return;
+				}
 				if (checkUserCount >= checkUserTotal) {
 					checkUserCount = 0;
 				}								
@@ -170,7 +173,7 @@ function getUnreedNum(isFull, pmListHtml){
 }
 
 function onUnreedDetected (isFull, unreedNum, pmListHtml, username){
-	console.log ('onUnreedDetected start.IsFull ' + isFull + 'username: ' + username);
+	console.log ('onUnreedDetected start.IsFull ' + isFull + '. username: ' + username);
 
 	messageIdList = pmListHtml.match(/name=id value=\d+/g);
 	messageSenders = pmListHtml.match(/target="_blank">.+(?=<\/a>)/g);
@@ -179,6 +182,7 @@ function onUnreedDetected (isFull, unreedNum, pmListHtml, username){
 	lastShowedMessageId = 0;
 	userIndex = -1;
 	avatarUrl = '';
+	console.log (lastShowedMessageIdArray);
 	$.each(lastShowedMessageIdArray, function(index, value) {
 		console.log (value);
 		if (value.name == username) {
@@ -242,9 +246,8 @@ function onUnreedDetected (isFull, unreedNum, pmListHtml, username){
 	}
 	else {
 		lastShowedMessageIdArray[userIndex].lastShowedMessageId = lastShowedMessageId;
-	}	
-	
-	localStorage.setItem('lastShowedMessageIdArray', lastShowedMessageIdArray);
+	}		
+	localStorage.setItem('lastShowedMessageIdArray', JSON.stringify(lastShowedMessageIdArray));
 }
 
 function onNotificationClicked (notificationId){
