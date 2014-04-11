@@ -1,9 +1,9 @@
 var MESSAGE_LIST_URL = "http://www.cc98.org/usersms.asp?action=inbox";
 var MESSAGE_CONTENT_URL = "http://www.cc98.org/messanger.asp?action=read&id=";
 var MESSAGE_INBOX_URL = "http://www.cc98.org/usersms.asp?action=inbox";
+var DISPUSER_URL = "http://www.cc98.org/dispuser.asp?name=";
 
-//var lastShowedMessageId;//for user now log in
-var lastShowedMessageIdArray;//for other user
+var lastShowedMessageIdArray;
 var lastClickedNotificationId;
 var checkUserTotal = 0;
 var checkUserCount = 0;
@@ -14,18 +14,10 @@ init();
 function init(){
 	console.log ('Init start.');
 	chrome.alarms.onAlarm.addListener(onAlarm);
-	chrome.alarms.create('refresh', {periodInMinutes: 0.2});
+	chrome.alarms.create('refresh', {periodInMinutes: 5});
 	chrome.browserAction.onClicked.addListener(goToInbox);
-
-/*	lastShowedMessageId = localStorage.getItem('lastShowedMessageId');
-	lastShowedMessageId = 0;//for debug.
-	if (lastShowedMessageId == null) {
-		console.log ("No lastShowedMessageId record.");
-		lastShowedMessageId = 0;
-	}*/
-
 	lastShowedMessageIdArray = localStorage.getItem('lastShowedMessageIdArray');	
-	lastShowedMessageIdArray = null;//for debug.
+	//lastShowedMessageIdArray = null;//for debug.
 	if (lastShowedMessageIdArray == null) {
 		console.log ("No lastShowedMessageIdArray record.");
 		lastShowedMessageIdArray = new Array();
@@ -57,43 +49,7 @@ function switchUser(cookieNow, cookieSwitchValue) {
 	cookieToSwitch.value = cookieSwitchValue;
 	//switch the cookie.
 	chrome.cookies.set(cookieToSwitch);	
-	return cookieOriginal;             
-
-
-
-/*	lastShowedMessageId = 0;
-	chrome.cookies.get({url:"http://www.cc98.org", name:"aspsky"}, function (cookie){    
-	    if (cookie == null){
-	    	cookieNow = null;
-	    	console.log('Not log in.');
-	    }
-	    else {
-	    	console.log(cookie);
-	    	cookieOld = {
-	  			url:"http://www.cc98.org",
-	  			name:"aspsky",
-	  			expirationDate:0,
-	  			value:""
-	  		} 
-	  		cookieOld.value = cookie.value;
-	  		cookieOld.expirationDate = cookie.expirationDate;  
-	    }
-
-	    cookieNew = {
-  			url:"http://www.cc98.org",
-  			name:"aspsky",
-  			value:""
-  		}
-
-  		chrome.storage.sync.get("checkerList",function (item){
-  			$.each(item.checkerList, function(index, value) {
-  				cookieNew.value = value;
-  				chrome.cookies.set(cookieNew);
-  				username = value.match(/username=.+(?=&usercookies)/g)[0].substr(9);
-  				onAlarm("switch to " + username);
-  			});
-  		});
-  	});*/
+	return cookieOriginal;
 }
 
 function onAlarm(alarm) {
@@ -102,7 +58,8 @@ function onAlarm(alarm) {
 		chrome.cookies.get({url:"http://www.cc98.org", name:"aspsky"}, function(cookieLog){
 			var unreedNumberTotal = 0;
 			//step 1 check the user now login.
-			var isFull = false;
+			var isFull = true;
+			var username = '';
 			if (cookie == null) {
 				cookieFull = {
 					url: "http://www.cc98.org",
@@ -116,7 +73,7 @@ function onAlarm(alarm) {
 				isFull = checkIsFull(cookie);
 			}
 			pmListHtml = getpmListHtml();
-			unreedNumber = getUnreedNum(isFull, pmListHtml);
+			unreedNumber = getUnreedNum(isFull, pmListHtml);			
 			if (unreedNumber > 0 ) {
 				unreedNumberTotal = unreedNumber;
 				username = cookieLog.value.match(/username=.+(?=&usercookies)/g)[0].substr(9);
@@ -149,10 +106,23 @@ function onAlarm(alarm) {
 				chrome.cookies.set(cookieOriginal);
 				if (unreedNumberTotal > 0) {
 					chrome.browserAction.setBadgeText({text:(unreedNumberTotal - unreedNumber).toString() + '/' +unreedNumberTotal.toString()});
+				}
+				else {
+					chrome.browserAction.setBadgeText({text:''});
 				}			
 			});
 		});	
 	});
+}
+
+function getUserAvatar(username) {
+	htmlobj = $.ajax({url:DISPUSER_URL + username,async:false});
+	dispuserHtml = htmlobj.responseText;
+	avatarUrl = dispuserHtml.match(/<img src='.+(?=' width=')/g)[0].substr(10);	
+	if (avatarUrl.indexOf('file.cc98.org') < 0) {
+		avatarUrl = 'http://www.cc98.org/' + avatarUrl;
+	}
+	return avatarUrl;
 }
 
 function checkIsFull(cookie) {
@@ -171,7 +141,7 @@ function checkIsFull(cookie) {
 }
 
 function getpmListHtml () {
-	htmlobj=$.ajax({url:MESSAGE_LIST_URL,async:false});
+	htmlobj = $.ajax({url:MESSAGE_LIST_URL,async:false});
 	pmListHtml = htmlobj.responseText;
 
 	return pmListHtml;
@@ -193,6 +163,7 @@ function getUnreedNum(isFull, pmListHtml){
 		//onUnreedDetected(isFull, unreedNum, pmListHtml);
 	}
 	else {
+		console.log ('No unreed message.');
 		return 0;
 		//chrome.browserAction.setBadgeText({text:""});
 	}
@@ -207,13 +178,19 @@ function onUnreedDetected (isFull, unreedNum, pmListHtml, username){
 	
 	lastShowedMessageId = 0;
 	userIndex = -1;
+	avatarUrl = '';
 	$.each(lastShowedMessageIdArray, function(index, value) {
 		console.log (value);
 		if (value.name == username) {
 			lastShowedMessageId = value.lastShowedMessageId;
 			userIndex = index;
-		}
+			avatarUrl = value.avatarUrl;
+			return;
+		}		
 	});
+	if (avatarUrl == '') {
+		avatarUrl = getUserAvatar(username);
+	}
 
 	if (isFull){
 		messageTitles = pmListHtml.match(/.+(?=<\/a><\/td>)/g);		
@@ -241,7 +218,7 @@ function onUnreedDetected (isFull, unreedNum, pmListHtml, username){
 				type:"basic",
 				title: '收到一条来自  ' + messageSender + '  的新消息',
 				message: '标题：' +  messageTitle,
-				iconUrl: "http://www.cc98.org/favicon.ico"
+				iconUrl: avatarUrl
 			}
 			console.log ('start notification' + messageId);
 			chrome.notifications.create('message' + messageId, opt, function(){});
@@ -257,7 +234,8 @@ function onUnreedDetected (isFull, unreedNum, pmListHtml, username){
 	if (userIndex < 0){
 		user = {
 			name:username,
-			lastShowedMessageId:0
+			lastShowedMessageId:0,
+			avatarUrl:avatarUrl
 		}
 		user.lastShowedMessageId = lastShowedMessageId;
 		lastShowedMessageIdArray.push(user);
