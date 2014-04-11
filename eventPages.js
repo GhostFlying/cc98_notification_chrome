@@ -2,10 +2,11 @@ var MESSAGE_LIST_URL = "http://www.cc98.org/usersms.asp?action=inbox";
 var MESSAGE_CONTENT_URL = "http://www.cc98.org/messanger.asp?action=read&id=";
 var MESSAGE_INBOX_URL = "http://www.cc98.org/usersms.asp?action=inbox";
 
-var lastShowedMessageId;
+//var lastShowedMessageId;//for user now log in
+var lastShowedMessageIdArray;//for other user
 var lastClickedNotificationId;
 var checkUserTotal = 0;
-var chekerUserCount = 0;
+var checkUserCount = 0;
 
 
 init();
@@ -16,11 +17,18 @@ function init(){
 	chrome.alarms.create('refresh', {periodInMinutes: 0.2});
 	chrome.browserAction.onClicked.addListener(goToInbox);
 
-	lastShowedMessageId = localStorage.getItem('lastShowedMessageId');
+/*	lastShowedMessageId = localStorage.getItem('lastShowedMessageId');
 	lastShowedMessageId = 0;//for debug.
 	if (lastShowedMessageId == null) {
 		console.log ("No lastShowedMessageId record.");
 		lastShowedMessageId = 0;
+	}*/
+
+	lastShowedMessageIdArray = localStorage.getItem('lastShowedMessageIdArray');	
+	lastShowedMessageIdArray = null;//for debug.
+	if (lastShowedMessageIdArray == null) {
+		console.log ("No lastShowedMessageIdArray record.");
+		lastShowedMessageIdArray = new Array();
 	}
 }
 
@@ -111,7 +119,8 @@ function onAlarm(alarm) {
 			unreedNumber = getUnreedNum(isFull, pmListHtml);
 			if (unreedNumber > 0 ) {
 				unreedNumberTotal = unreedNumber;
-				onUnreedDetected(isFull, unreedNumber, pmListHtml);
+				username = cookieLog.value.match(/username=.+(?=&usercookies)/g)[0].substr(9);
+				onUnreedDetected(isFull, unreedNumber, pmListHtml, username);
 			}		
 
 			//step 2 check the user in the list.
@@ -119,21 +128,27 @@ function onAlarm(alarm) {
 			chrome.storage.sync.get("checkerList",function (item){
 				checkerList = item.checkerList;
 				checkUserTotal = checkerList.length;
-				if (chekerUserCount >= checkUserTotal) {
-					chekerUserCount = 0;
+				if (checkUserCount >= checkUserTotal) {
+					checkUserCount = 0;
+				}								
+				usernameNew = checkerList[checkUserCount].match(/username=.+(?=&usercookies)/g)[0].substr(9);
+				if (usernameNew == username) {
+					checkUserCount = checkUserCount +1;
+					console.log ('same user.');
+					return;
 				}
-				cookieOriginal = switchUser(cookieLog, checkerList[chekerUserCount]);
-				chekerUserCount = chekerUserCount + 1;
+				cookieOriginal = switchUser(cookieLog, checkerList[checkUserCount]);
+				checkUserCount = checkUserCount + 1;
 				pmListHtml = getpmListHtml(isFull);
-				unreedNumber = getUnreedNum(isFull, pmListHtml);
+				unreedNumber = getUnreedNum(isFull, pmListHtml);								
 				if (unreedNumber > 0) {
 					unreedNumberTotal = unreedNumberTotal + unreedNumber;
-					onUnreedDetected(isFull, unreedNumber, pmListHtml);
+					onUnreedDetected(isFull, unreedNumber, pmListHtml, usernameNew);
 				}		
 				console.log ('Switch back to origin.');
 				chrome.cookies.set(cookieOriginal);
 				if (unreedNumberTotal > 0) {
-					chrome.browserAction.setBadgeText({text:unreedNumberTotal.toString()});
+					chrome.browserAction.setBadgeText({text:(unreedNumberTotal - unreedNumber).toString() + '/' +unreedNumberTotal.toString()});
 				}			
 			});
 		});	
@@ -183,11 +198,23 @@ function getUnreedNum(isFull, pmListHtml){
 	}
 }
 
-function onUnreedDetected (isFull, unreedNum, pmListHtml){
-	console.log ('onUnreedDetected start.IsFull ' + isFull);
+function onUnreedDetected (isFull, unreedNum, pmListHtml, username){
+	console.log ('onUnreedDetected start.IsFull ' + isFull + 'username: ' + username);
 
 	messageIdList = pmListHtml.match(/name=id value=\d+/g);
 	messageSenders = pmListHtml.match(/target="_blank">.+(?=<\/a>)/g);
+
+	
+	lastShowedMessageId = 0;
+	userIndex = -1;
+	$.each(lastShowedMessageIdArray, function(index, value) {
+		console.log (value);
+		if (value.name == username) {
+			lastShowedMessageId = value.lastShowedMessageId;
+			userIndex = index;
+		}
+	});
+
 	if (isFull){
 		messageTitles = pmListHtml.match(/.+(?=<\/a><\/td>)/g);		
 		for (i = 0; i < unreedNum; i++){
@@ -226,8 +253,20 @@ function onUnreedDetected (isFull, unreedNum, pmListHtml){
 		}
 
 	}
-	localStorage.setItem('lastShowedMessageId', lastShowedMessageId);
-
+	//localStorage.setItem('lastShowedMessageId', lastShowedMessageId);
+	if (userIndex < 0){
+		user = {
+			name:username,
+			lastShowedMessageId:0
+		}
+		user.lastShowedMessageId = lastShowedMessageId;
+		lastShowedMessageIdArray.push(user);
+	}
+	else {
+		lastShowedMessageIdArray[userIndex].lastShowedMessageId = lastShowedMessageId;
+	}	
+	
+	localStorage.setItem('lastShowedMessageIdArray', lastShowedMessageIdArray);
 }
 
 function onNotificationClicked (notificationId){
