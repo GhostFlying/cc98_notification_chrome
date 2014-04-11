@@ -2,13 +2,14 @@
   "manifest_version": 2,
   "name": "CC98 Messages Checker",
   "description": "Check for unreed messages.",
-  "version": "0.1",
+  "version": "0.2",
   "permissions": [
     "cookies",
     "*://*.cc98.org/*",
     "alarms",
     "notifications",
-    "tabs"
+    "tabs",
+    "storage"
   ],
   "browser_action": {
     "default_icon": "cc98.png"
@@ -17,5 +18,6 @@
   "background": {
     "persistent": false,
     "page": "eventPages.html"
-  }
+  },
+  "options_page": "options.html"
 }
